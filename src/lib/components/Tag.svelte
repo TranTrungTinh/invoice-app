@@ -10,6 +10,7 @@
   class:alert={label === 'late'}
   class:archive={label === 'paid' || label === 'archive'}
 >
+
   {label}
 </div>
 
