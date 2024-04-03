@@ -9,6 +9,7 @@
 <div class="center h-screen w-screen flex-col overflow-x-hidden text-center">
   <h1
     class="min-h-[250px] min-w-[430px] bg-bg404 bg-center bg-no-repeat text-[11.25rem] font-black text-daisyBush"
+
   >
     {$page.status}
   </h1>
