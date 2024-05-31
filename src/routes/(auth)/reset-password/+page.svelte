@@ -1,6 +1,13 @@
+<script lang="ts">
+  import Alert from '$lib/components/Alert.svelte'
+
+  export let form;
+</script>
+
 <h1 class="auth-heading">Reset my Password</h1>
 
-<form>
+<form method="POST">
+  <Alert message={form?.error} />
   <div class="field">
     <label for="newPassword" class="text-goldenFizz">New Password</label>
     <input type="password" name="newPassword" required />
