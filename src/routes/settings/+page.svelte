@@ -6,7 +6,6 @@
   import { states } from '$lib/utils/states';
   import { settings, loadSettings } from '$lib/stores/SettingsStore';
   import { onMount } from 'svelte';
-  import Authenticated from '$lib/components/Authenticated.svelte';
 
   let mySettings: Settings = {} as Settings;
 
@@ -16,7 +15,6 @@
   });
 </script>
 
-<Authenticated>
   <div class="grid min-h-screen grid-cols-12 bg-whisper md:gap-x-16">
     <Snackbar />
     <Navbar />
@@ -88,7 +86,6 @@
       </form>
     </main>
   </div>
-</Authenticated>
 
 <style lang="postcss">
   h2 {
