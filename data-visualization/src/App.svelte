@@ -10,10 +10,11 @@
   let height = 400;
 
   const margin = { top: 20, right: 15, bottom: 20, left: 0 };
-  const innerWidth = width - margin.right - margin.left;
-  const innerHeight = height - margin.top - margin.bottom;
 
-  let xScale = scaleLinear()
+  $: innerWidth = width - margin.left - margin.right;
+  let innerHeight = height - margin.top - margin.bottom;
+
+  $: xScale = scaleLinear()
     .domain([0, 100])
     .range([0, innerWidth]);
 
@@ -22,22 +23,24 @@
     .range([innerHeight, 0]);
 </script>
 
-<svg {width} {height}>
-  <g class='inner-chart' transform="translate({margin.left}, {margin.top})">
-    <AxisY width={innerWidth} {yScale} />
-    <AxisX height={innerHeight} width={innerWidth} {xScale} />
-    {#each data as d}
-      <circle
-        cx={xScale(d.grade)}
-        cy={yScale(d.hours)}
-        r={10}
-        fill="purple"
-        stroke="black"
-        stroke-width={1}
-      />
-    {/each}
-  </g>
-</svg>
+<div class='chart-container' bind:clientWidth={width}>
+  <svg {width} {height}>
+    <g class='inner-chart' transform="translate({margin.left}, {margin.top})">
+    <AxisX width={innerWidth} height={innerHeight} {xScale} />
+    <AxisY width={innerWidth} height={innerHeight} {yScale} />
+      {#each data as d}
+        <circle
+          cx={xScale(d.grade)}
+          cy={yScale(d.hours)}
+          r={10}
+          fill="purple"
+          stroke="black"
+          stroke-width={1}
+        />
+      {/each}
+    </g>
+  </svg>
+</div>
 
 <style>
   :global(.tick text, .axis-title) {

@@ -6,10 +6,17 @@ It also includes a simple CSS reset, as existing Svelte templates sometimes have
 
 ## Getting started
 
-### 1. Install dependencies
+### 1. Clone the template
+
+You can clone this template in one of two ways:
+
+1. Click the green "Use this template" button on GitHub
+2. On the command line, run `npx degit connorrothschild/svelte-visualization-template`
+
+### 2. Install dependencies
 
 Run `npm install` or `pnpm install` to install the dependencies.
 
-### 2. Start the development server
+### 3. Start the development server
 
 Run `npm run dev` to start the development server.
