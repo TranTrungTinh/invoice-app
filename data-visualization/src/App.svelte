@@ -1,6 +1,7 @@
 <script>
   import AxisX from "$components/AxisX.svelte";
   import AxisY from "$components/AxisY.svelte";
+  import Tooltip from "$components/Tooltip.svelte";
   import data from "$data/data.js";
 
   import { scaleLinear } from "d3-scale";
@@ -21,25 +22,35 @@
   let yScale = scaleLinear()
     .domain([0, max(data, d => d.hours)])
     .range([innerHeight, 0]);
+
+  let hoveredData;
+  let radius = 10;
 </script>
 
-<div class='chart-container' bind:clientWidth={width}>
-  <svg {width} {height}>
-    <g class='inner-chart' transform="translate({margin.left}, {margin.top})">
-    <AxisX width={innerWidth} height={innerHeight} {xScale} />
-    <AxisY width={innerWidth} height={innerHeight} {yScale} />
-      {#each data as d}
+<div class="chart-container" bind:clientWidth={width} tabindex="0">
+  <svg {width} {height} on:mouseleave={() => hoveredData = null}>
+    <g class="inner-chart" transform="translate({margin.left}, {margin.top})">
+      <AxisY width={innerWidth} {yScale} />
+      <AxisX height={innerHeight} width={innerWidth} {xScale} />
+      {#each data.sort((a, b) => a.grade - b.grade) as d, index}
         <circle
           cx={xScale(d.grade)}
           cy={yScale(d.hours)}
-          r={10}
           fill="purple"
           stroke="black"
           stroke-width={1}
+          r={hoveredData == d ? radius * 2 : radius}
+          opacity={hoveredData ? (hoveredData == d ? 1 : 0.45) : 0.85}
+          on:mouseover={() => (hoveredData = d)}
+          on:focus={() => (hoveredData = d)}
+          tabindex="0"
         />
       {/each}
     </g>
   </svg>
+  {#if hoveredData}
+    <Tooltip data={hoveredData} {xScale} {yScale} {width} />
+  {/if}
 </div>
 
 <style>
@@ -47,5 +58,14 @@
     font-weight: 400; /* How thick our text is */
     font-size: 12px; /* How big our text is */
     fill: hsla(212, 10%, 53%, 1); /* The color of our text */
+  }
+
+  .chart-container {
+    position: relative;
+  }
+
+  circle {
+    transition: r 300ms ease, opacity 500ms ease;
+    cursor: pointer;
   }
 </style>
