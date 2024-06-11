@@ -1,83 +1,52 @@
 <script>
-  import AxisX from "$components/AxisX.svelte";
-  import AxisY from "$components/AxisY.svelte";
-  import Tooltip from "$components/Tooltip.svelte";
   import data from "$data/data.js";
-
-  import { scaleLinear } from "d3-scale";
-  import { max } from "d3-array";
+  import { forceSimulation, forceX, forceY, forceCollide } from "d3-force";
+  import { scaleLinear, scaleBand } from "d3-scale";
 
   let width = 400,
     height = 400;
-
-  const margin = { top: 20, right: 15, bottom: 20, left: 0 };
-  const radius = 10;
+  const margin = { top: 0, right: 0, left: 0, bottom: 20 };
 
   $: innerWidth = width - margin.left - margin.right;
   let innerHeight = height - margin.top - margin.bottom;
 
+  const RADIUS = 5;
+
+  import { mean, rollups } from "d3-array";
+
+  // Generate the average for each continent, so that we can sort according to that
+  const continents = rollups(
+    data,
+    v => mean(v, d => d.happiness),
+    d => d.continent
+  ) // Group data by continent and return the group-wide mean
+    .sort((a, b) => a[1] - b[1]) // Sort according to value
+    .map(d => d[0]); // Grab the continent name
+
   $: xScale = scaleLinear()
-    .domain([0, 100])
+    .domain([1, 9]) // Alternatively, we could pass .domain(extent(data, d => d.happiness))
     .range([0, innerWidth]);
 
-  let yScale = scaleLinear()
-    .domain([0, max(data, d => d.hours)])
-    .range([innerHeight, 0]);
+  let yScale = scaleBand()
+    .domain(continents)
+    .range([innerHeight, 0])
+    .paddingOuter(0.5);
 
-  let hoveredData;
+  $: simulation = forceSimulation(data)
+    .force("x", forceX().x(d => xScale(d.happiness)).strength(0.8))
+    .force("y", forceY().y(d => yScale(d.continent)).strength(0.2))
+    .force("collide", forceCollide().radius(RADIUS))
 
-  import { fly } from "svelte/transition";
+  $: nodes = simulation.nodes();
+  $: console.log(nodes);
 </script>
 
-<h1>Students who studied longer scored higher on their final exams</h1>
-<div
-  class="chart-container"
-  bind:clientWidth={width}
->
-  <svg {width} {height} on:mouseleave={() => hoveredData = null}>
+<div class='chart-container' bind:clientWidth={width}>
+  <svg {width} {height}>
     <g class="inner-chart" transform="translate({margin.left}, {margin.top})">
-        <AxisY width={innerWidth} {yScale} />
-        <AxisX height={innerHeight} width={innerWidth} {xScale} />
-        {#each data.sort((a, b) => a.grade - b.grade) as d, index}
-          <circle 
-            in:fly={{ x: -10, opacity: 0, duration: 500 }}
-            cx={xScale(d.grade)}
-            cy={yScale(d.hours)}
-            fill="purple"
-            stroke="black"
-            r={hoveredData == d ? radius * 2 : radius}
-            opacity={hoveredData ? (hoveredData == d ? 1 : 0.45) : 0.85}
-            on:mouseover={() => hoveredData = d}
-            on:focus={() => hoveredData = d}
-            tabindex="0"
-          />
-        {/each}
+      {#each nodes as node}
+        <circle cx={node.x} cy={node.y} r={RADIUS} fill="steelblue" stroke="black" />
+      {/each}
     </g>
   </svg>
-  {#if hoveredData}
-    <Tooltip {xScale} {yScale} {width} data={hoveredData} />
-  {/if}
 </div>
-
-<style>
-  :global(.tick text, .axis-title) {
-    font-weight: 400; /* How thick our text is */
-    font-size: 12px; /* How big our text is */
-    fill: hsla(212, 10%, 53%, 1); /* The color of our text */
-  }
-
-  .chart-container {
-    position: relative;
-  }
-
-  circle {
-    transition: r 300ms ease, opacity 500ms ease;
-    cursor: pointer;
-  }
-
-  h1 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.35rem;
-    font-weight: 600;
-  }
-</style>

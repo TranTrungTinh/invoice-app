@@ -5,15 +5,6 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [svelte()],
-  vite: {
-    server: {
-      hmr: {
-        port: 443,
-        strictPort: true,
-        overlay: false
-      }
-    }
-  },
   resolve: {
     alias: {
       $components: path.resolve("./src/components"),
