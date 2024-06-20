@@ -118,7 +118,8 @@
       <AxisX {xScale} height={innerHeight} width={innerWidth} />
       <AxisY {yScale} {groupByContinent} />
       {#each nodes as node, i}
-        <circle
+        <circle       
+          in:fade={{ delay: 200 + 10 * i, duration: 400 }}
           cx={node.x}
           cy={node.y}
           r={radiusScale(node.happiness)}
