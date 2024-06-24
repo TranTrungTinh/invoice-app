@@ -19,18 +19,24 @@
   $: path = geoPath(projection);
 </script>
 
-<svg {width} {height}>
-  <!-- Globe -->
-  <circle r={width / 2} cx={width / 2} cy={height / 2} fill="lightblue" />
+<div class='chart-container' bind:clientWidth={width}>
+  <svg {width} {height}>
+    <!-- Globe -->
+    <circle r={width / 2} cx={width / 2} cy={height / 2} fill="lightblue" />
 
-  <!-- Countries -->
-  {#each countries as country}
-    <path d={path(country)} fill="lightgreen" stroke="none" />
-  {/each}
+    <!-- Countries -->
+    {#each countries as country}
+      <path d={path(country)} fill="lightgreen" stroke="none" />
+    {/each}
 
-  <!-- Borders -->
-  <path d={path(borders)} fill="none" stroke="white" />
-</svg>
+    <!-- Borders -->
+    <path d={path(borders)} fill="none" stroke="white" />
+  </svg>
+</div>
 
 <style>
+  .chart-container {
+    max-width: 468px;
+    margin: auto;
+  }
 </style>
