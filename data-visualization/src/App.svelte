@@ -17,20 +17,31 @@
     .translate([width / 2, height / 2]);
 
   $: path = geoPath(projection);
+
+  import Glow from "./components/Glow.svelte";
 </script>
 
 <div class='chart-container' bind:clientWidth={width}>
   <svg {width} {height}>
+    <!-- Filter for drop shadow -->
+    <Glow />
+
     <!-- Globe -->
-    <circle r={width / 2} cx={width / 2} cy={height / 2} fill="lightblue" />
+    <circle 
+      r={width / 2} 
+      cx={width / 2} 
+      cy={height / 2} 
+      fill="#1c1c1c"
+      filter="url(#glow)" 
+    />
 
     <!-- Countries -->
     {#each countries as country}
-      <path d={path(country)} fill="lightgreen" stroke="none" />
+      <path d={path(country)} fill="#26362e" stroke="none" />
     {/each}
 
     <!-- Borders -->
-    <path d={path(borders)} fill="none" stroke="white" />
+    <path d={path(borders)} fill="none" stroke="#1C1C1C" />
   </svg>
 </div>
 
@@ -38,5 +49,13 @@
   .chart-container {
     max-width: 468px;
     margin: auto;
+  }
+
+  :global(body) {
+    background-color: rgb(40, 40, 40);
+  }
+
+  svg {
+    overflow: visible;
   }
 </style>
