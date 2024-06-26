@@ -19,6 +19,25 @@
   $: path = geoPath(projection);
 
   import Glow from "./components/Glow.svelte";
+
+  import data from "$data/data.json"; // https://data.worldbank.org/indicator/SP.POP.TOTL
+
+  // Restructure countries array to include population
+  countries.forEach(country => {
+    const metadata = data?.find(d => d.id === country.id);
+    if (metadata) {
+      country.population = metadata.population;
+      country.country = metadata.country;
+    }
+  });
+
+  // Color scale
+  import { max } from "d3-array";
+  import { scaleLinear } from "d3-scale";
+
+  const colorScale = scaleLinear()
+    .domain([0, max(data, d => d.population)])
+    .range(["#26362e", "#0DCC6C"]);
 </script>
 
 <div class='chart-container' bind:clientWidth={width}>
@@ -37,7 +56,11 @@
 
     <!-- Countries -->
     {#each countries as country}
-      <path d={path(country)} fill="#26362e" stroke="none" />
+      <path 
+        d={path(country)} 
+        fill={colorScale(country.population || 0)}
+        stroke="none" 
+      />
     {/each}
 
     <!-- Borders -->
