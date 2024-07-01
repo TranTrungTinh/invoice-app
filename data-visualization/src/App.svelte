@@ -59,7 +59,7 @@
   const degreesPerFrame = 0.5;
 
   const t = timer(() => {
-    if (dragging) return;
+    if (dragging || tooltipData) return;
     $xRotation += degreesPerFrame;
   }, 0);
 
@@ -86,6 +86,22 @@
         })
     );
   });
+
+  // Tooltips
+  let tooltipData;
+  import Tooltip from "$components/Tooltip.svelte";
+
+  // Alongside existing script tag code...
+  import { geoCentroid } from "d3-geo";
+
+  // Whenever tooltipData changes, calculate the center of the country and rotate to it
+  $: if (tooltipData) {
+    const center = geoCentroid(tooltipData);
+    $xRotation = -center[0];
+    $yRotation = -center[1];
+  }
+
+  import { draw } from "svelte/transition";
 </script>
 
 <div class="chart-container" bind:clientWidth={width}>
@@ -100,6 +116,7 @@
       cy={height / 2}
       fill="#1c1c1c"
       filter="url(#glow)"
+      on:click={() => (tooltipData = null)}
     />
 
     <!-- Countries -->
@@ -108,12 +125,30 @@
         d={path(country)}
         fill={colorScale(country.population || 0)}
         stroke="none"
+        on:click={() => (tooltipData = country)}
+        on:focus={() => (tooltipData = country)}
+        tabIndex="0"
       />
     {/each}
 
     <!-- Borders -->
     <path d={path(borders)} fill="none" stroke="#1C1C1C" />
+
+    <!-- Clicked country border -->
+    {#if tooltipData}
+      {#key tooltipData.id}
+        <path
+          d={path(tooltipData)}
+          fill="transparent"
+          stroke="white"
+          stroke-width="2"
+          pointer-events="none"
+          in:draw
+        />
+      {/key}
+    {/if}
   </svg>
+  <Tooltip data={tooltipData} />
 </div>
 
 <style>
@@ -132,5 +167,14 @@
 
   .dragging {
     cursor: move;
+  }
+
+  path {
+    cursor: pointer;
+  }
+
+  path:focus,
+  path:focus-visible {
+    outline: none;
   }
 </style>
