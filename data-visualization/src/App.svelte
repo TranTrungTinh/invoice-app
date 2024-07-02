@@ -102,6 +102,9 @@
   }
 
   import { draw } from "svelte/transition";
+
+  // Legend
+  import Legend from "$components/Legend.svelte";
 </script>
 
 <div class="chart-container" bind:clientWidth={width}>
@@ -148,6 +151,7 @@
       {/key}
     {/if}
   </svg>
+  <Legend data={tooltipData} {colorScale} />
   <Tooltip data={tooltipData} />
 </div>
 
