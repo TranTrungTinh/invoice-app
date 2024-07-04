@@ -1,206 +1,139 @@
 <script>
-  // Import geojson objects
-  import world from "$data/world-110m.json"; // From https://unpkg.com/world-atlas@1.1.4/world/110m.json
-  import * as topojson from "topojson-client";
-
-  let countries = topojson.feature(world, world.objects.countries).features;
-  let borders = topojson.mesh(
-    world,
-    world.objects.countries,
-    (a, b) => a !== b
-  );
-
-  import { geoOrthographic, geoPath } from "d3-geo";
-
-  let width = 400;
-  $: height = width;
-
-  $: projection = geoOrthographic()
-    .scale(width / 2)
-    .rotate([$xRotation, $yRotation])
-    .translate([width / 2, height / 2]);
-
-  $: path = geoPath(projection);
-
-  import Glow from "./components/Glow.svelte";
-
-  import data from "$data/data.json"; // https://data.worldbank.org/indicator/SP.POP.TOTL
-
-  // Restructure countries array to include population
-  countries.forEach((country) => {
-    const metadata = data?.find((d) => d.id === country.id);
-    if (metadata) {
-      country.population = metadata.population;
-      country.country = metadata.country;
-    }
-  });
-
-  // Color scale
-  import { max } from "d3-array";
-  import { scaleLinear } from "d3-scale";
-
-  const colorScale = scaleLinear()
-    .domain([0, max(data, (d) => d.population)])
-    .range(["#26362e", "#0DCC6C"]);
-
-  // Autorotation
-  import { timer } from "d3-timer";
-  import { spring } from "svelte/motion";
-
-  let xRotation = spring(0, {
-    stiffness: 0.08,
-    damping: 0.4,
-  });
-
-  let yRotation = spring(-30, {
-    stiffness: 0.17,
-    damping: 0.7,
-  });
-  const degreesPerFrame = 0.5;
-
-  const t = timer(() => {
-    if (dragging || tooltipData) return;
-    $xRotation += degreesPerFrame;
-  }, 0);
-
-  // Add user interaction
-  import { onMount } from "svelte";
-  import { select } from "d3-selection";
-  import { drag } from "d3-drag";
-
-  let globe;
-  let dragging = false;
-  const DRAG_SENSITIVITY = 3;
-
-  onMount(() => {
-    const element = select(globe);
-    element.call(
-      drag()
-        .on("drag", (event) => {
-          dragging = true;
-          $xRotation = $xRotation + event.dx * DRAG_SENSITIVITY;
-          $yRotation = $yRotation - event.dy * DRAG_SENSITIVITY; // We subtract here because the y-axis is inverted
-        })
-        .on("end", (event) => {
-          dragging = false;
-        })
-    );
-  });
-
-  // Tooltips
-  let tooltipData;
+  import AxisX from "$components/AxisX.svelte";
+  import AxisY from "$components/AxisY.svelte";
   import Tooltip from "$components/Tooltip.svelte";
+  import data from "$data/data.js";
 
-  // Alongside existing script tag code...
-  import { geoCentroid } from "d3-geo";
+  import { scaleLinear } from "d3-scale";
+  import { max } from "d3-array";
 
-  // Whenever tooltipData changes, calculate the center of the country and rotate to it
-  $: if (tooltipData) {
-    const center = geoCentroid(tooltipData);
-    $xRotation = -center[0];
-    $yRotation = -center[1];
-  }
+  let width = 400,
+    height = 400;
 
-  import { draw } from "svelte/transition";
+  const margin = { top: 20, right: 15, bottom: 20, left: 0 };
+  const radius = 10;
 
-  // Legend
-  import Legend from "$components/Legend.svelte";
+  $: innerWidth = width - margin.left - margin.right;
+  let innerHeight = height - margin.top - margin.bottom;
+
+  $: xScale = scaleLinear()
+    .domain([0, 100])
+    .range([0, innerWidth]);
+
+  let yScale = scaleLinear()
+    .domain([0, max(data, d => d.hours)])
+    .range([innerHeight, 0]);
+
+  let hoveredData;
+
+  import { fly } from "svelte/transition";
+
+  // Scrollytelling
+  import Scrolly from "./helpers/Scrolly.svelte";
+  let currentStep;
+  console.log({ currentStep });
 </script>
 
-<div class="chart-container" bind:clientWidth={width}>
-  <h1>The World at a Glance</h1>
-  <h2>Population by country, 2021</h2>
-  <svg {width} {height} bind:this={globe} class:dragging>
-    <!-- Filter for drop shadow -->
-    <Glow />
-
-    <!-- Globe -->
-    <circle
-      r={width / 2}
-      cx={width / 2}
-      cy={height / 2}
-      fill="#1c1c1c"
-      filter="url(#glow)"
-      on:click={() => (tooltipData = null)}
-    />
-
-    <!-- Countries -->
-    {#each countries as country}
-      <path
-        d={path(country)}
-        fill={colorScale(country.population || 0)}
-        stroke="none"
-        on:click={() => (tooltipData = country)}
-        on:focus={() => (tooltipData = country)}
-        tabIndex="0"
-      />
-    {/each}
-
-    <!-- Borders -->
-    <path d={path(borders)} fill="none" stroke="#1C1C1C" />
-
-    <!-- Clicked country border -->
-    {#if tooltipData}
-      {#key tooltipData.id}
-        <path
-          d={path(tooltipData)}
-          fill="transparent"
-          stroke="white"
-          stroke-width="2"
-          pointer-events="none"
-          in:draw
-        />
-      {/key}
+<section>
+<div class='sticky'>
+  <h1>Students who studied longer scored higher on their final exams</h1>
+  <div
+    class="chart-container"
+    bind:clientWidth={width}
+  >
+    <svg {width} {height} on:mouseleave={() => hoveredData = null}>
+      <g class="inner-chart" transform="translate({margin.left}, {margin.top})">
+          <AxisY width={innerWidth} {yScale} />
+          <AxisX height={innerHeight} width={innerWidth} {xScale} />
+          {#each data.sort((a, b) => a.grade - b.grade) as d, index}
+            <circle 
+              in:fly={{ x: -10, opacity: 0, duration: 500 }}
+              cx={xScale(d.grade)}
+              cy={yScale(d.hours)}
+              fill="purple"
+              stroke="black"
+              r={hoveredData == d ? radius * 2 : radius}
+              opacity={hoveredData ? (hoveredData == d ? 1 : 0.45) : 0.85}
+              on:mouseover={() => hoveredData = d}
+              on:focus={() => hoveredData = d}
+              tabindex="0"
+            />
+          {/each}
+      </g>
+    </svg>
+    {#if hoveredData}
+      <Tooltip {xScale} {yScale} {width} data={hoveredData} />
     {/if}
-  </svg>
-  <Legend data={tooltipData} {colorScale} />
-  <Tooltip data={tooltipData} />
+  </div>
 </div>
 
+  <div class='steps'>
+    <Scrolly bind:value={currentStep}>
+        {#each ['Hello', 'Scrollytelling', 'World!'] as text, i}
+            <div class="step" class:active={currentStep === i}>
+              <div class='step-content'>
+                <p>{text}</p> 
+                </div>
+            </div>
+        {/each}
+    </Scrolly>
+  </div>
+</section>
+
 <style>
+  :global(.tick text, .axis-title) {
+    font-weight: 400; /* How thick our text is */
+    font-size: 12px; /* How big our text is */
+    fill: hsla(212, 10%, 53%, 1); /* The color of our text */
+  }
+
   .chart-container {
     position: relative;
-    max-width: 468px;
-    margin: 0 auto;
   }
 
-  :global(body) {
-    background: rgba(40, 40, 40);
-  }
-
-  svg {
-    overflow: visible;
-  }
-
-  path {
+  circle {
+    transition: r 300ms ease, opacity 500ms ease;
     cursor: pointer;
   }
 
-  .dragging {
-    cursor: move;
-  }
-
-  h1,
-  h2 {
-    color: white;
-    text-align: center;
-  }
-
   h1 {
-    font-size: 1.75rem;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.35rem;
     font-weight: 600;
-    margin-bottom: 0.35rem;
   }
 
-  h2 {
-    font-size: 1.25rem;
-    font-weight: 200;
-    margin-bottom: 1rem;
+  .step {
+    height: 90vh;
+    opacity: 0.3;
+    transition: opacity 300ms ease;
+    display: flex;
+    justify-content: center;
+    place-items: center;
   }
 
-  /* Typically removing :focus styles is bad accessibility practice,                                                                               but in our case the focused country has its own path outline */
-  path:focus,
-  path:focus-visible {
-    outline: none;
+  .step.active {
+    opacity: 1;
+  }
+
+  section {
+    position: relative;
+  }
+
+  .sticky {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .steps {
+    z-index: 2;
+    position: relative;
+  }
+
+  .step-content {
+    padding: 0.75rem 1rem;
+    border: 1px solid black;
+    border-radius: 3px;
+    background: white;
   }
 </style>

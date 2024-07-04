@@ -8,6 +8,8 @@ export default defineConfig({
   vite: {
     server: {
       hmr: {
+        port: 443,
+        strictPort: true,
         overlay: false
       }
     }
