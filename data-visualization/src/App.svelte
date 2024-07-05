@@ -31,7 +31,29 @@
   // Scrollytelling
   import Scrolly from "./helpers/Scrolly.svelte";
   let currentStep;
-  console.log({ currentStep });
+
+  let initialData = data.sort((a, b) => a.grade - b.grade);
+  let renderedData = initialData;
+
+  $: X_MIDPOINT = (xScale.domain()[0] + xScale.domain()[1]) / 2;
+  $: Y_MIDPOINT = (yScale.domain()[0] + yScale.domain()[1]) / 2;
+
+  $: {
+    if (currentStep === 0) {
+      renderedData = initialData.map(d => ({
+        ...d,
+        hours: Y_MIDPOINT,
+        grade: X_MIDPOINT
+      }));
+      hoveredData = null;
+    } else if (currentStep === 1) {
+      renderedData = initialData.map(d => ({ ...d, hours: Y_MIDPOINT }));
+      hoveredData = null;
+    } else if (currentStep === 2) {
+      renderedData = initialData;
+      hoveredData = initialData[13];
+    }
+  }
 </script>
 
 <section>
@@ -45,7 +67,7 @@
       <g class="inner-chart" transform="translate({margin.left}, {margin.top})">
           <AxisY width={innerWidth} {yScale} />
           <AxisX height={innerHeight} width={innerWidth} {xScale} />
-          {#each data.sort((a, b) => a.grade - b.grade) as d, index}
+          {#each renderedData as d}
             <circle 
               in:fly={{ x: -10, opacity: 0, duration: 500 }}
               cx={xScale(d.grade)}
@@ -54,8 +76,8 @@
               stroke="black"
               r={hoveredData == d ? radius * 2 : radius}
               opacity={hoveredData ? (hoveredData == d ? 1 : 0.45) : 0.85}
-              on:mouseover={() => hoveredData = d}
-              on:focus={() => hoveredData = d}
+              on:mouseover={() => (currentStep >= 2 ? hoveredData = d : null)}
+              on:focus={() => (currentStep >= 2 ? hoveredData = d : null)}
               tabindex="0"
             />
           {/each}
@@ -82,9 +104,9 @@
 
 <style>
   :global(.tick text, .axis-title) {
-    font-weight: 400; /* How thick our text is */
-    font-size: 12px; /* How big our text is */
-    fill: hsla(212, 10%, 53%, 1); /* The color of our text */
+    font-weight: 400;
+    font-size: 12px;
+    fill: hsla(212, 10%, 53%, 1);
   }
 
   .chart-container {
@@ -92,7 +114,9 @@
   }
 
   circle {
-    transition: r 300ms ease, opacity 500ms ease;
+    transition: r 300ms ease, opacity 500ms ease,
+      cx 500ms cubic-bezier(0.76, 0, 0.24, 1),
+      cy 500ms cubic-bezier(0.76, 0, 0.24, 1); /* https://easings.net/#easeInOutQuart */
     cursor: pointer;
   }
 
@@ -128,6 +152,7 @@
   .steps {
     z-index: 2;
     position: relative;
+    pointer-events: none;
   }
 
   .step-content {
