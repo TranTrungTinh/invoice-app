@@ -65,8 +65,12 @@
   >
     <svg {width} {height} on:mouseleave={() => hoveredData = null}>
       <g class="inner-chart" transform="translate({margin.left}, {margin.top})">
-          <AxisY width={innerWidth} {yScale} />
-          <AxisX height={innerHeight} width={innerWidth} {xScale} />
+          {#if currentStep > 1}
+            <AxisY width={innerWidth} {yScale} />
+          {/if}
+          {#if currentStep > 0}
+            <AxisX height={innerHeight} width={innerWidth} {xScale} />
+          {/if}
           {#each renderedData as d}
             <circle 
               in:fly={{ x: -10, opacity: 0, duration: 500 }}
@@ -84,7 +88,7 @@
       </g>
     </svg>
     {#if hoveredData}
-      <Tooltip {xScale} {yScale} {width} data={hoveredData} />
+        <Tooltip {xScale} {yScale} {width} data={hoveredData} />
     {/if}
   </div>
 </div>
