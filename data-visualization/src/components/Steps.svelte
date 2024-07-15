@@ -5,7 +5,7 @@
 
 <div class="steps">
   <Scrolly bind:value={currentStep}>
-    {#each ["Thank you for sticking with me in this course.", "I hope it was helpful!", "Just remember that learning is a process, and whatever pace you learn at is ok. I hope that I helped you along the way ❤️"] as text, i}
+    {#each ["Hello", "Scrollytelling", "World!"] as text, i}
       <div class="step" class:active={currentStep === i}>
         <div class="step-content">
           <p>{text}</p>
